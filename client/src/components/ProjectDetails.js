@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './Header';
+import Chat from './Chat';
 import './ProjectDetails.css';
 
 const ProjectDetails = ({ user, onLogin, onLogout }) => {
@@ -549,12 +550,18 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
           {activeTab === 'connect' && (
             <div className="connect-section">
               <h3>Team Chat</h3>
-              <div className="chat-container">
+              {user ? (
+                <Chat
+                  projectId={id}
+                  userId={user._id || user.id}
+                  username={user.name}
+                />
+              ) : (
                 <div className="chat-placeholder">
-                  <p>💬 Chat functionality coming soon!</p>
-                  <p>Connect with your team members in real-time</p>
+                  <p>💬 Please log in to access the chat</p>
+                  <p>Sign in to connect with the team!</p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
