@@ -78,7 +78,7 @@ router.post('/verify-otp', async (req, res) => {
     user.otpExpires = undefined;
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
+    const token = jwt.sign({ user: { id: user._id } }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
 
     res.json({
       message: 'Email verified successfully',
@@ -118,7 +118,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
+    const token = jwt.sign({ user: { id: user._id } }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
 
     res.json({
       message: 'Login successful',

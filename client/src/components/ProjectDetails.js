@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './Header';
 import Chat from './Chat';
+import Resources from './Resources';
 import './ProjectDetails.css';
 
 const ProjectDetails = ({ user, onLogin, onLogout }) => {
@@ -141,8 +142,17 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
   };
 
   const isUserMember = () => {
-    if (!user || !project) return false;
-    return project.members && project.members.some(member => member.email === user.email);
+    if (!user || !project) {
+      console.log('isUserMember check - Missing user or project:', { user: !!user, project: !!project });
+      return false;
+    }
+    console.log('isUserMember check - User:', user.email);
+    console.log('isUserMember check - Project members:', project.members);
+    const isMember = project.members && project.members.some(member => 
+      typeof member === 'string' ? member === user.email : member.email === user.email
+    );
+    console.log('isUserMember check - Is member?', isMember);
+    return isMember;
   };
 
   const isUserCreator = () => {
@@ -515,35 +525,11 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
           {activeTab === 'resources' && (
             <div className="resources-section">
-              <div className="section-header">
-                <h3>Project Resources</h3>
-                {(isUserMember() || isUserCreator()) && (
-                  <button className="add-btn">+ Upload File</button>
-                )}
-              </div>
-
-              <div className="resources-list">
-                {resources.map(resource => (
-                  <div key={resource.id} className="resource-item">
-                    <div className="resource-icon">
-                      {resource.type === 'document' && '📄'}
-                      {resource.type === 'design' && '🎨'}
-                      {resource.type === 'link' && '🔗'}
-                    </div>
-                    <div className="resource-info">
-                      <h4>{resource.name}</h4>
-                      <p>Uploaded by {resource.uploadedBy} on {resource.uploadDate}</p>
-                    </div>
-                    <button className="download-btn">Download</button>
-                  </div>
-                ))}
-              </div>
-
-              {resources.length === 0 && (
-                <div className="empty-state">
-                  <p>No resources uploaded yet. Share files to collaborate better!</p>
-                </div>
-              )}
+              <Resources 
+                projectId={id} 
+                isTeamMember={isUserMember() || isUserCreator()} 
+                user={user} 
+              />
             </div>
           )}
 

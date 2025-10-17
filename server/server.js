@@ -13,10 +13,20 @@ const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const meetingRoutes = require('./routes/meetings');
 const messageRoutes = require('./routes/messages');
+const resourceRoutes = require('./routes/resources');
 const Message = require('./models/Message');
 
 const app = express();
+// Serve uploaded files
+app.use('/uploads', express.static('uploads'));
 const server = http.createServer(app);
+
+// Increase the timeout for the server
+server.timeout = 120000; // 2 minutes
+
+// Configure Express for large file uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Initialize Socket.IO with CORS
 const io = socketIo(server, {
@@ -55,6 +65,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api', resourceRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
