@@ -6,6 +6,9 @@ package-lock.json
 /client/build/
 build/
 
+# Uploads
+server/uploads/
+
 # Environment variables
 .env
 .env.local
