@@ -472,7 +472,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
             <div className="tasks-section">
               <div className="section-header">
                 <h3>Project Tasks</h3>
-                {(isUserMember() || isUserCreator()) && (
+                {isUserCreator() && (
                   <button className="add-btn" onClick={addTask}>+ Add Task</button>
                 )}
               </div>
@@ -555,7 +555,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
             <div className="schedule-section">
               <div className="section-header">
                 <h3>Meetings & Schedule</h3>
-                {(isUserMember() || isUserCreator()) && (
+                {isUserCreator() && (
                   <button className="add-btn" onClick={addMeeting}>+ Schedule Meeting</button>
                 )}
               </div>

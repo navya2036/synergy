@@ -27,31 +27,7 @@ const ProjectPreview = ({ user, onLogin, onLogout }) => {
     }
   };
 
-  const handleJoinRequest = async () => {
-    if (!user) {
-      alert('Please log in to send a join request');
-      return;
-    }
-
-    try {
-      const response = await axios.post(`/api/projects/${id}/request-join`, {
-        userEmail: user.email,
-        userName: user.name,
-        message: `Hi, I would like to join your project "${project.title}". I have experience with ${user.skills ? user.skills.join(', ') : 'various technologies'}.`
-      });
-
-      if (response.data.message) {
-        alert('Join request sent successfully! The project owner will review your request.');
-      }
-    } catch (error) {
-      console.error('Error sending join request:', error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert('Failed to send join request. Please try again.');
-      }
-    }
-  };
+  // Removed join request handling as it's now handled in the main project details page
 
   if (loading) {
     return (
@@ -78,9 +54,7 @@ const ProjectPreview = ({ user, onLogin, onLogout }) => {
     );
   }
 
-  const isCreator = user && project.creatorEmail === user.email;
-  const isMember = user && project.members && project.members.includes(user.email);
-  const canJoin = user && !isCreator && !isMember && project.members.length < project.maxMembers;
+  // Simplified preview page without join functionality
 
   return (
     <div className="app">
@@ -137,38 +111,10 @@ const ProjectPreview = ({ user, onLogin, onLogout }) => {
                 </div>
               </div>
             </div>
-
-            <div className="project-actions">
-              {!user && (
-                <button onClick={() => alert('Please log in to join this project')} className="join-button">
-                  Log in to Join
-                </button>
-              )}
-              {isCreator && (
-                <button onClick={() => navigate(`/project/${project._id}`)} className="manage-button">
-                  Manage Project
-                </button>
-              )}
-              {isMember && !isCreator && (
-                <button onClick={() => navigate(`/project/${project._id}`)} className="view-project-button">
-                  View Project Details
-                </button>
-              )}
-              {canJoin && (
-                <button onClick={handleJoinRequest} className="join-button">
-                  Send Join Request
-                </button>
-              )}
-              {user && !canJoin && !isCreator && !isMember && (
-                <button disabled className="join-button disabled">
-                  {project.members.length >= project.maxMembers ? 'Team Full' : 'Cannot Join'}
-                </button>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

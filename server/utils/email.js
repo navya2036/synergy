@@ -58,7 +58,95 @@ const sendOTPEmail = async (email, otp, name) => {
   }
 };
 
+// Send Join Request Notification to Project Owner
+const sendJoinRequestEmail = async (ownerEmail, ownerName, requesterName, projectTitle, message) => {
+  // For development: log notification to console if email is not configured properly
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
+      process.env.EMAIL_PASS === 'your-app-password' || 
+      process.env.EMAIL_USER === 'your-email@gmail.com') {
+    console.log(`\n📧 Join Request Notification for ${ownerEmail}`);
+    console.log(`Project: ${projectTitle}`);
+    console.log(`From: ${requesterName}`);
+    console.log(`Message: ${message}\n`);
+    return true; // Return success for development
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: ownerEmail,
+    subject: `New Join Request for ${projectTitle} - Synergy Platform`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">New Join Request</h2>
+        <p>Hi ${ownerName},</p>
+        <p>You have received a new join request for your project "${projectTitle}".</p>
+        <div style="background-color: #f4f4f4; padding: 20px; margin: 20px 0;">
+          <p><strong>From:</strong> ${requesterName}</p>
+          <p><strong>Message:</strong></p>
+          <p style="font-style: italic;">${message}</p>
+        </div>
+        <p>Please log in to the Synergy Platform to review and respond to this request.</p>
+        <p>Best regards,<br>Synergy Platform Team</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Join request notification email sent successfully to ${ownerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending join request notification:', error.message);
+    return false;
+  }
+};
+
+// Send Join Request Response Notification to Requester
+const sendRequestResponseEmail = async (requesterEmail, requesterName, projectTitle, status, ownerName) => {
+  // For development: log notification to console if email is not configured properly
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
+      process.env.EMAIL_PASS === 'your-app-password' || 
+      process.env.EMAIL_USER === 'your-email@gmail.com') {
+    console.log(`\n📧 Request Response Notification for ${requesterEmail}`);
+    console.log(`Project: ${projectTitle}`);
+    console.log(`Status: ${status}`);
+    console.log(`From: ${ownerName}\n`);
+    return true; // Return success for development
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: requesterEmail,
+    subject: `Join Request ${status === 'accepted' ? 'Accepted' : 'Update'} for ${projectTitle} - Synergy Platform`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Join Request ${status.charAt(0).toUpperCase() + status.slice(1)}</h2>
+        <p>Hi ${requesterName},</p>
+        ${status === 'accepted' ? 
+          `<p>Great news! Your request to join "${projectTitle}" has been accepted by ${ownerName}.</p>
+           <p>You can now access the project and collaborate with the team.</p>` :
+          `<p>Your request to join "${projectTitle}" has been reviewed by ${ownerName}.</p>
+           <p>Unfortunately, the team is unable to accept your request at this time.</p>`
+        }
+        <p>You can log in to the Synergy Platform to view more details.</p>
+        <p>Best regards,<br>Synergy Platform Team</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Request response email sent successfully to ${requesterEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending request response email:', error.message);
+    return false;
+  }
+};
+
 module.exports = {
   generateOTP,
-  sendOTPEmail
+  sendOTPEmail,
+  sendJoinRequestEmail,
+  sendRequestResponseEmail
 };

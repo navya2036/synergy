@@ -72,6 +72,16 @@ router.post('/request/:projectId', async (req, res) => {
 
     await joinRequest.save();
 
+    // Send email notification to project owner
+    const { sendJoinRequestEmail } = require('../utils/email');
+    await sendJoinRequestEmail(
+      owner.email,
+      owner.name || owner.email,
+      requesterName,
+      project.title,
+      message || `${requesterName} would like to join your project.`
+    );
+
     res.status(201).json({
       message: 'Join request sent successfully',
       request: joinRequest
@@ -155,6 +165,7 @@ router.put('/respond/:requestId', async (req, res) => {
     // If accepted, add user to project members
     if (status === 'accepted') {
       const project = await Project.findById(joinRequest.projectId);
+      const owner = await User.findOne({ email: ownerEmail });
 
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
@@ -165,6 +176,17 @@ router.put('/respond/:requestId', async (req, res) => {
         // Update request to rejected since project is now full
         joinRequest.status = 'rejected';
         await joinRequest.save();
+
+        // Send rejection email due to project being full
+        const { sendRequestResponseEmail } = require('../utils/email');
+        await sendRequestResponseEmail(
+          joinRequest.requesterEmail,
+          joinRequest.requesterName,
+          project.title,
+          'rejected',
+          owner ? owner.name : ownerEmail
+        );
+
         return res.status(400).json({ message: 'Project is now full, request automatically rejected' });
       }
 
@@ -172,7 +194,28 @@ router.put('/respond/:requestId', async (req, res) => {
       if (!project.members.includes(joinRequest.requesterEmail)) {
         project.members.push(joinRequest.requesterEmail);
         await project.save();
+
+        // Send acceptance email
+        const { sendRequestResponseEmail } = require('../utils/email');
+        await sendRequestResponseEmail(
+          joinRequest.requesterEmail,
+          joinRequest.requesterName,
+          project.title,
+          'accepted',
+          owner ? owner.name : ownerEmail
+        );
       }
+    } else if (status === 'rejected') {
+      // Send rejection email
+      const owner = await User.findOne({ email: ownerEmail });
+      const { sendRequestResponseEmail } = require('../utils/email');
+      await sendRequestResponseEmail(
+        joinRequest.requesterEmail,
+        joinRequest.requesterName,
+        project.title,
+        'rejected',
+        owner ? owner.name : ownerEmail
+      );
     }
 
     res.json({

@@ -172,8 +172,8 @@ const ProjectCard = ({ project, user, onLoginRequired }) => {
 
       {/* Message Modal */}
       {showMessageModal && (
-        <div className="modal-overlay" onClick={() => setShowMessageModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <div className="modal-header">
               <h3>Join Request for "{project.title}"</h3>
               <button className="close-btn" onClick={() => setShowMessageModal(false)}>×</button>
