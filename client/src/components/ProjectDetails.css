@@ -1159,3 +1159,25 @@
     flex-direction: column;
   }
 }
+
+.project-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.delete-project-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-project-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}

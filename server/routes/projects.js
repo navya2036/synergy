@@ -1,5 +1,9 @@
 const express = require('express');
 const Project = require('../models/Project');
+const JoinRequest = require('../models/JoinRequest');
+const Task = require('../models/Task');
+const Meeting = require('../models/Meeting');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -125,6 +129,38 @@ router.post('/:id/add-member', async (req, res) => {
     res.json({ success: true, message: 'Member added successfully', project });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete project (only accessible by team lead)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Check if the user is the team lead
+    if (project.teamLead !== req.user.email) {
+      return res.status(403).json({ message: 'Only team lead can delete the project' });
+    }
+
+    await Project.findByIdAndDelete(req.params.id);
+    
+    // Delete associated join requests
+    await JoinRequest.deleteMany({ projectId: req.params.id });
+    
+    // Delete associated tasks
+    await Task.deleteMany({ projectId: req.params.id });
+    
+    // Delete associated meetings
+    await Meeting.deleteMany({ projectId: req.params.id });
+
+    res.json({ message: 'Project deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
   }
 });
 
