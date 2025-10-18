@@ -342,42 +342,44 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
         onLoginRequired={() => navigate('/login')}
       />
       <div className="project-details-content">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            ← Back to Dashboard
-          </button>
+        <button className="back-btn" onClick={() => navigate('/')}>
+          ← Back to Dashboard
+        </button>
 
-          <div className="project-header-section">
-            <div className="project-title-area">
-              <h1>{project.title}</h1>
-              <div className="project-badges">
-                <span className={`status-badge ${project.status}`}>
-                  {project.status?.charAt(0).toUpperCase() + project.status?.slice(1)}
-                </span>
-                {isUserCreator() && <span className="creator-badge">Project Lead</span>}
-                {isUserMember() && !isUserCreator() && <span className="member-badge">Team Member</span>}
-              </div>
+        <div className="project-header-section">
+          <div className="project-title-area">
+            <h1>{project.title}</h1>
+            <div className="project-badges">
+              <span className={`status-badge ${project.status}`}>
+                {project.status?.charAt(0).toUpperCase() + project.status?.slice(1)}
+              </span>
+              {isUserCreator() && <span className="creator-badge">Project Lead</span>}
+              {isUserMember() && !isUserCreator() && <span className="member-badge">Team Member</span>}
             </div>
+          </div>
 
-            <div className="project-actions">
-              {!isUserMember() && !isUserCreator() && (
-                <button className="join-project-btn" onClick={handleJoinProject}>
-                  Join Project
-                </button>
-              )}
-              {isUserCreator() && (
-                <button 
-                  className="delete-project-btn" 
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-                      handleDeleteProject();
-                    }
-                  }}
-                >
-                  Delete Project
-                </button>
-              )}
-            </div>
-          </div>        <div className="project-tabs">
+          <div className="project-actions">
+            {!isUserMember() && !isUserCreator() && (
+              <button className="join-project-btn" onClick={handleJoinProject}>
+                Join Project
+              </button>
+            )}
+            {isUserCreator() && (
+              <button 
+                className="delete-project-btn" 
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+                    handleDeleteProject();
+                  }
+                }}
+              >
+                Delete Project
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="project-tabs">
           <button
             className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
