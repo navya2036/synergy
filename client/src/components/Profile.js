@@ -225,7 +225,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
   }
 
   return (
-    <div className="profile-page" style={{backgroundColor: '#f5f7fa', minHeight: '100vh'}}>
+    <div className="profile-page" style={{backgroundColor: '#CBDCEB', minHeight: '100vh'}}>
       <Header 
         user={user} 
         onLogout={onLogout} 

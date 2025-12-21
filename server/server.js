@@ -21,8 +21,6 @@ const User = require('./models/User');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
 const server = http.createServer(app);
 
 // Increase the timeout for the server
