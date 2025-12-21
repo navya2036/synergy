@@ -80,12 +80,12 @@ router.post('/register', registerLimiter, async (req, res) => {
 
     await user.save();
 
-    // Send OTP email
-    const emailSent = await sendOTPEmail(email, otp, name);
-    if (!emailSent) {
-      return res.status(500).json({ message: 'Failed to send verification email' });
-    }
+    // Send OTP email asynchronously (don't wait)
+    sendOTPEmail(email, otp, name).catch(err => {
+      console.error('Error sending OTP email:', err);
+    });
 
+    // Respond immediately without waiting for email
     res.status(201).json({ 
       message: 'User registered successfully. Please check your email for OTP verification.',
       userId: user._id
@@ -200,11 +200,12 @@ router.post('/resend-otp', otpResendLimiter, async (req, res) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    const emailSent = await sendOTPEmail(user.email, otp, user.name);
-    if (!emailSent) {
-      return res.status(500).json({ message: 'Failed to send verification email' });
-    }
+    // Send OTP email asynchronously (don't wait)
+    sendOTPEmail(user.email, otp, user.name).catch(err => {
+      console.error('Error sending OTP email:', err);
+    });
 
+    // Respond immediately without waiting for email
     res.json({ message: 'OTP sent successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

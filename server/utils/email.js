@@ -1,12 +1,18 @@
 const nodemailer = require('nodemailer');
 
-// Email configuration
+// Email configuration with optimized settings
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER || 'your-email@gmail.com',
     pass: process.env.EMAIL_PASS || 'your-app-password'
-  }
+  },
+  pool: true, // Use connection pool
+  maxConnections: 5,
+  maxMessages: 100,
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 20000 // 20 seconds
 });
 
 // Generate OTP
