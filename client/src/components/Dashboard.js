@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import ProjectCard from './ProjectCard';
 import Header from './Header';
 import LoginModal from './LoginModal';
@@ -18,7 +18,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
   const fetchProjects = async () => {
     try {
-      const response = await axios.get('/api/projects');
+      const response = await api.get('/api/projects');
       setProjects(response.data);
       setLoading(false);
     } catch (error) {
