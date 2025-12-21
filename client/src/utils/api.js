@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance with custom config
 const api = axios.create({
+  baseURL: 'https://synergy-ut87.onrender.com',
   timeout: 120000, // 2 minutes
   timeoutErrorMessage: 'Request timed out',
   headers: {
@@ -45,6 +46,7 @@ api.interceptors.response.use(undefined, async error => {
 
 // Create FormData axios instance with different timeout for file uploads
 export const formDataApi = axios.create({
+  baseURL: 'https://synergy-ut87.onrender.com',
   timeout: 300000, // 5 minutes for file uploads
   timeoutErrorMessage: 'Upload timed out',
   headers: {

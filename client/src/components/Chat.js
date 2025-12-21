@@ -28,7 +28,7 @@ const Chat = ({ projectId, userId, username }) => {
         }
 
         // Create socket connection with JWT in auth
-        const newSocket = io('http://localhost:5000', {
+        const newSocket = io('https://synergy-ut87.onrender.com', {
           query: { projectId },
           auth: { token }, // Send JWT token in handshake
           transports: ['websocket', 'polling'],

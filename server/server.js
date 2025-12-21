@@ -33,7 +33,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Initialize Socket.IO with CORS
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://synergy-sigma.vercel.app"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   },
