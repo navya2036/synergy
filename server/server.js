@@ -1,4 +1,6 @@
 const express = require('express');
+const app = express();
+app.set('trust proxy', 1);
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
@@ -20,7 +22,6 @@ const Project = require('./models/Project');
 const User = require('./models/User');
 const { errorHandler } = require('./middleware/errorHandler');
 
-const app = express();
 const server = http.createServer(app);
 
 // Increase the timeout for the server
