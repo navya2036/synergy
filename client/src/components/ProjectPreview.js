@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import Header from './Header';
 import './ProjectPreview.css';
 
@@ -17,7 +17,7 @@ const ProjectPreview = ({ user, onLogin, onLogout }) => {
 
   const fetchProject = async () => {
     try {
-      const response = await axios.get(`/api/projects/${id}`);
+      const response = await api.get(`/api/projects/${id}`);
       setProject(response.data);
       setLoading(false);
     } catch (error) {

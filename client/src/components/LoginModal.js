@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import './LoginModal.css';
 
 const LoginModal = ({ isOpen, onClose, onLogin, redirectTo = null }) => {
@@ -27,7 +27,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, redirectTo = null }) => {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', formData);
+      const response = await api.post('/api/auth/login', formData);
       
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);

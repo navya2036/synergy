@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import './Auth.css';
 
 const Signup = () => {
@@ -77,7 +77,7 @@ const Signup = () => {
       const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
       const projectsArray = formData.projectsDone.split(',').map(project => project.trim()).filter(project => project);
 
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/api/auth/register', {
         ...formData,
         skills: skillsArray,
         projectsDone: projectsArray
@@ -103,7 +103,7 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/verify-otp', {
+      const response = await api.post('/api/auth/verify-otp', {
         userId,
         otp
       });
@@ -126,7 +126,7 @@ const Signup = () => {
     setError('');
 
     try {
-      await axios.post('/api/auth/resend-otp', { userId });
+      await api.post('/api/auth/resend-otp', { userId });
       alert('OTP sent successfully! Please check your email.');
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to resend OTP. Please try again.');
