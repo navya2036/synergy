@@ -200,10 +200,50 @@
   color: #64748b;
 }
 
-.deadline .date {
-  font-size: 1.25rem;
+.deadline .task-title {
+  font-size: 1.1rem;
   font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.deadline .date {
+  font-size: 1rem;
+  font-weight: 500;
   color: #dc2626;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.days-left {
+  margin: 0.75rem 0;
+}
+
+.days-count {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.days-count.today {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.days-count.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.deadline p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
 }
 
 .project-description {
@@ -255,7 +295,7 @@
 
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
 }
 
@@ -266,6 +306,9 @@
   border: 2px solid #e2e8f0;
   position: relative;
   transition: transform 0.2s ease;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
 }
 
 .team-member-card:hover {
@@ -282,11 +325,37 @@
   color: #374151;
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .team-member-card p {
   color: #64748b;
   font-size: 0.875rem;
+  word-break: break-word;
+}
+
+.member-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.skill-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.empty-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 2rem;
 }
 
 .lead-badge {

@@ -2,21 +2,21 @@ const express = require('express');
 const JoinRequest = require('../models/JoinRequest');
 const Project = require('../models/Project');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
 // Send join request
-router.post('/request/:projectId', async (req, res) => {
+router.post('/request/:projectId', auth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const {
-      requesterId,
-      requesterName,
-      requesterEmail,
-      requesterSkills,
-      requesterCollege,
-      message
-    } = req.body;
+    const { message } = req.body;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Check if project exists
     const project = await Project.findById(projectId);
@@ -30,19 +30,19 @@ router.post('/request/:projectId', async (req, res) => {
     }
 
     // Check if user is already a member
-    if (project.members && project.members.includes(requesterEmail)) {
+    if (project.members && project.members.includes(user.email)) {
       return res.status(400).json({ message: 'You are already a member of this project' });
     }
 
     // Check if user is the project owner
-    if (project.creatorEmail === requesterEmail) {
+    if (project.creatorEmail === user.email) {
       return res.status(400).json({ message: 'You are the owner of this project' });
     }
 
     // Check if request already exists
     const existingRequest = await JoinRequest.findOne({
       projectId,
-      requesterId,
+      requesterId: user._id,
       status: 'pending'
     });
 
@@ -56,15 +56,15 @@ router.post('/request/:projectId', async (req, res) => {
       return res.status(404).json({ message: 'Project owner not found' });
     }
 
-    // Create join request
+    // Create join request using authenticated user's data
     const joinRequest = new JoinRequest({
       projectId,
       projectTitle: project.title,
-      requesterId,
-      requesterName,
-      requesterEmail,
-      requesterSkills: requesterSkills || [],
-      requesterCollege: requesterCollege || '',
+      requesterId: user._id,
+      requesterName: user.name,
+      requesterEmail: user.email,
+      requesterSkills: user.skills || [],
+      requesterCollege: user.college || '',
       message: message || '',
       ownerId: owner._id,
       ownerEmail: owner.email
@@ -77,9 +77,9 @@ router.post('/request/:projectId', async (req, res) => {
     await sendJoinRequestEmail(
       owner.email,
       owner.name || owner.email,
-      requesterName,
+      user.name,
       project.title,
-      message || `${requesterName} would like to join your project.`
+      message || `${user.name} would like to join your project.`
     );
 
     res.status(201).json({
@@ -92,12 +92,17 @@ router.post('/request/:projectId', async (req, res) => {
 });
 
 // Get join requests for a project owner
-router.get('/owner/:ownerEmail', async (req, res) => {
+router.get('/owner/:ownerEmail', auth, async (req, res) => {
   try {
-    const { ownerEmail } = req.params;
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const { status } = req.query; // optional filter by status
 
-    const filter = { ownerEmail };
+    const filter = { ownerEmail: user.email }; // Use authenticated user's email
     if (status) {
       filter.status = status;
     }
@@ -113,12 +118,17 @@ router.get('/owner/:ownerEmail', async (req, res) => {
 });
 
 // Get join requests sent by a user
-router.get('/requester/:requesterEmail', async (req, res) => {
+router.get('/requester/:requesterEmail', auth, async (req, res) => {
   try {
-    const { requesterEmail } = req.params;
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const { status } = req.query; // optional filter by status
 
-    const filter = { requesterEmail };
+    const filter = { requesterEmail: user.email }; // Use authenticated user's email
     if (status) {
       filter.status = status;
     }
@@ -134,13 +144,19 @@ router.get('/requester/:requesterEmail', async (req, res) => {
 });
 
 // Respond to join request (accept/reject)
-router.put('/respond/:requestId', async (req, res) => {
+router.put('/respond/:requestId', auth, async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { status, ownerEmail } = req.body; // status: 'accepted' or 'rejected'
+    const { status } = req.body; // status: 'accepted' or 'rejected'
 
     if (!['accepted', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status. Must be "accepted" or "rejected"' });
+    }
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const joinRequest = await JoinRequest.findById(requestId);
@@ -148,8 +164,8 @@ router.put('/respond/:requestId', async (req, res) => {
       return res.status(404).json({ message: 'Join request not found' });
     }
 
-    // Verify owner
-    if (joinRequest.ownerEmail !== ownerEmail) {
+    // Verify owner using authenticated user's email
+    if (joinRequest.ownerEmail !== user.email) {
       return res.status(403).json({ message: 'Not authorized to respond to this request' });
     }
 
@@ -165,7 +181,6 @@ router.put('/respond/:requestId', async (req, res) => {
     // If accepted, add user to project members
     if (status === 'accepted') {
       const project = await Project.findById(joinRequest.projectId);
-      const owner = await User.findOne({ email: ownerEmail });
 
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
@@ -184,7 +199,7 @@ router.put('/respond/:requestId', async (req, res) => {
           joinRequest.requesterName,
           project.title,
           'rejected',
-          owner ? owner.name : ownerEmail
+          user.name
         );
 
         return res.status(400).json({ message: 'Project is now full, request automatically rejected' });
@@ -202,19 +217,20 @@ router.put('/respond/:requestId', async (req, res) => {
           joinRequest.requesterName,
           project.title,
           'accepted',
-          owner ? owner.name : ownerEmail
+          user.name
         );
       }
     } else if (status === 'rejected') {
+      // Fetch project for rejection email
+      const project = await Project.findById(joinRequest.projectId);
       // Send rejection email
-      const owner = await User.findOne({ email: ownerEmail });
       const { sendRequestResponseEmail } = require('../utils/email');
       await sendRequestResponseEmail(
         joinRequest.requesterEmail,
         joinRequest.requesterName,
-        project.title,
+        project ? project.title : joinRequest.projectTitle,
         'rejected',
-        owner ? owner.name : ownerEmail
+        user.name
       );
     }
 
@@ -228,18 +244,23 @@ router.put('/respond/:requestId', async (req, res) => {
 });
 
 // Delete/withdraw join request
-router.delete('/:requestId', async (req, res) => {
+router.delete('/:requestId', auth, async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { userEmail } = req.body;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const joinRequest = await JoinRequest.findById(requestId);
     if (!joinRequest) {
       return res.status(404).json({ message: 'Join request not found' });
     }
 
-    // Only requester or owner can delete
-    if (joinRequest.requesterEmail !== userEmail && joinRequest.ownerEmail !== userEmail) {
+    // Only requester or owner can delete (using authenticated user's email)
+    if (joinRequest.requesterEmail !== user.email && joinRequest.ownerEmail !== user.email) {
       return res.status(403).json({ message: 'Not authorized to delete this request' });
     }
 
@@ -252,17 +273,20 @@ router.delete('/:requestId', async (req, res) => {
 });
 
 // Get all join requests for a specific project
-router.get('/project/:projectId', async (req, res) => {
+router.get('/project/:projectId', auth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { ownerEmail } = req.query;
 
-    // Verify ownership if ownerEmail is provided
-    if (ownerEmail) {
-      const project = await Project.findById(projectId);
-      if (!project || project.creatorEmail !== ownerEmail) {
-        return res.status(403).json({ message: 'Not authorized to view requests for this project' });
-      }
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify ownership using authenticated user
+    const project = await Project.findById(projectId);
+    if (!project || project.creatorEmail !== user.email) {
+      return res.status(403).json({ message: 'Not authorized to view requests for this project' });
     }
 
     const requests = await JoinRequest.find({ projectId })

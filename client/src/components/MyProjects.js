@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Header from './Header';
 import ProjectCard from './ProjectCard';
 import './MyProjects.css';
@@ -25,18 +26,25 @@ const MyProjects = ({ user, onLogin, onLogout }) => {
     setError('');
 
     try {
-      const response = await fetch(`/api/projects/user/${user.email}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/projects/user/${user.email}`, {
+        headers: {
+          'x-auth-token': token
+        }
+      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCreatedProjects(data.created || []);
-        setJoinedProjects(data.joined || []);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to fetch projects');
-      }
+      setCreatedProjects(response.data.created || []);
+      setJoinedProjects(response.data.joined || []);
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error('Error fetching projects:', error);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(error.response?.data?.message || 'Failed to fetch projects');
+      }
     } finally {
       setLoading(false);
     }

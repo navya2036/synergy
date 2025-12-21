@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const Task = require('../models/Task');
 const Project = require('../models/Project');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -77,7 +78,7 @@ const sendTaskAssignmentEmail = async (assigneeEmail, assigneeName, taskTitle, t
 };
 
 // Create a new task (only project leads can create tasks)
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const { 
       projectId, 
@@ -85,11 +86,15 @@ router.post('/', async (req, res) => {
       description, 
       assignedTo, 
       assignedToName,
-      assignedBy, 
-      assignedByName,
       priority, 
       dueDate 
     } = req.body;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Verify that the project exists
     const project = await Project.findById(projectId);
@@ -97,9 +102,9 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Verify that the person creating the task is the project lead
-    if (project.creatorEmail !== assignedBy) {
-      return res.status(403).json({ message: 'Only project leads can assign tasks' });
+    // Verify that the person creating the task is the project creator (using authenticated user)
+    if (project.creatorEmail !== user.email) {
+      return res.status(403).json({ message: 'Only project creator can assign tasks' });
     }
 
     // Verify that the assignee is a member of the project
@@ -107,15 +112,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Cannot assign task to non-member' });
     }
 
-    // Create the task
+    // Create the task using authenticated user's data
     const task = new Task({
       projectId,
       title,
       description,
       assignedTo,
       assignedToName,
-      assignedBy,
-      assignedByName,
+      assignedBy: user.email,
+      assignedByName: user.name,
       priority: priority || 'medium',
       dueDate: dueDate ? new Date(dueDate) : undefined
     });
@@ -130,7 +135,7 @@ router.post('/', async (req, res) => {
         title,
         description,
         project.title,
-        assignedByName,
+        user.name,
         dueDate
       );
     } catch (emailError) {
@@ -148,10 +153,15 @@ router.post('/', async (req, res) => {
 });
 
 // Get all tasks for a project
-router.get('/project/:projectId', async (req, res) => {
+router.get('/project/:projectId', auth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { userEmail } = req.query;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     // Verify that the project exists
     const project = await Project.findById(projectId);
@@ -159,8 +169,8 @@ router.get('/project/:projectId', async (req, res) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Verify that the user is a member of the project or the project lead
-    if (!project.members.includes(userEmail) && project.creatorEmail !== userEmail) {
+    // Verify that the user is a member of the project or the project creator
+    if (!project.members.includes(user.email) && project.creatorEmail !== user.email) {
       return res.status(403).json({ message: 'Not authorized to view tasks for this project' });
     }
 
@@ -172,12 +182,17 @@ router.get('/project/:projectId', async (req, res) => {
 });
 
 // Get tasks assigned to a specific user
-router.get('/assigned/:userEmail', async (req, res) => {
+router.get('/assigned/:userEmail', auth, async (req, res) => {
   try {
-    const { userEmail } = req.params;
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const { status } = req.query;
 
-    const filter = { assignedTo: userEmail };
+    const filter = { assignedTo: user.email }; // Use authenticated user's email
     if (status) {
       filter.status = status;
     }
@@ -193,13 +208,19 @@ router.get('/assigned/:userEmail', async (req, res) => {
 });
 
 // Update task status
-router.put('/:taskId/status', async (req, res) => {
+router.put('/:taskId/status', auth, async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { status, userEmail } = req.body;
+    const { status } = req.body;
 
     if (!['pending', 'in-progress', 'completed'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const task = await Task.findById(taskId);
@@ -207,9 +228,9 @@ router.put('/:taskId/status', async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Only the assigned person or project lead can update task status
+    // Only the assigned person or project creator can update task status
     const project = await Project.findById(task.projectId);
-    if (task.assignedTo !== userEmail && project.creatorEmail !== userEmail) {
+    if (task.assignedTo !== user.email && project.creatorEmail !== user.email) {
       return res.status(403).json({ message: 'Not authorized to update this task' });
     }
 
@@ -229,21 +250,27 @@ router.put('/:taskId/status', async (req, res) => {
   }
 });
 
-// Update task details (only project lead can update)
-router.put('/:taskId', async (req, res) => {
+// Update task details (only project creator can update)
+router.put('/:taskId', auth, async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { title, description, priority, dueDate, userEmail } = req.body;
+    const { title, description, priority, dueDate } = req.body;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const task = await Task.findById(taskId);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Only project lead can update task details
+    // Only project creator can update task details
     const project = await Project.findById(task.projectId);
-    if (project.creatorEmail !== userEmail) {
-      return res.status(403).json({ message: 'Only project leads can update task details' });
+    if (project.creatorEmail !== user.email) {
+      return res.status(403).json({ message: 'Only project creator can update task details' });
     }
 
     // Update fields
@@ -263,21 +290,26 @@ router.put('/:taskId', async (req, res) => {
   }
 });
 
-// Delete task (only project lead can delete)
-router.delete('/:taskId', async (req, res) => {
+// Delete task (only project creator can delete)
+router.delete('/:taskId', auth, async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { userEmail } = req.body;
+
+    // Get authenticated user from database
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const task = await Task.findById(taskId);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Only project lead can delete tasks
+    // Only project creator can delete tasks
     const project = await Project.findById(task.projectId);
-    if (project.creatorEmail !== userEmail) {
-      return res.status(403).json({ message: 'Only project leads can delete tasks' });
+    if (project.creatorEmail !== user.email) {
+      return res.status(403).json({ message: 'Only project creator can delete tasks' });
     }
 
     await Task.findByIdAndDelete(taskId);

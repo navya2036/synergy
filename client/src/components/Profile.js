@@ -68,13 +68,16 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
     if (!user?.email) return;
     
     try {
-      const response = await fetch(`/api/users/${user.email}/stats`);
-      if (response.ok) {
-        const stats = await response.json();
-        setUserStats(stats);
-      }
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/users/${user.email}/stats`, {
+        headers: { 'x-auth-token': token }
+      });
+      setUserStats(response.data);
     } catch (error) {
       console.error('Error fetching user stats:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
     }
   };
 
@@ -82,13 +85,16 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
     if (!user?.email) return;
     
     try {
-      const response = await fetch(`/api/projects/user/${user.email}`);
-      if (response.ok) {
-        const projects = await response.json();
-        setUserProjects(projects);
-      }
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/projects/user/${user.email}`, {
+        headers: { 'x-auth-token': token }
+      });
+      setUserProjects(response.data);
     } catch (error) {
       console.error('Error fetching user projects:', error);
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
     }
   };
 

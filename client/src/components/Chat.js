@@ -20,9 +20,17 @@ const Chat = ({ projectId, userId, username }) => {
       try {
         console.log('Initializing socket connection...', { projectId, userId });
         
-        // Create socket connection
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication required. Please login again.');
+          return;
+        }
+
+        // Create socket connection with JWT in auth
         const newSocket = io('http://localhost:5000', {
-          query: { projectId, userId },
+          query: { projectId },
+          auth: { token }, // Send JWT token in handshake
           transports: ['websocket', 'polling'],
           reconnectionAttempts: 5,
           reconnectionDelay: 1000,
@@ -40,6 +48,12 @@ const Chat = ({ projectId, userId, username }) => {
 
         newSocket.on('connected', (data) => {
           console.log('Received connection confirmation:', data);
+        });
+
+        newSocket.on('error', (err) => {
+          console.error('Socket error:', err);
+          setError(err.message || 'Chat connection error');
+          setIsConnected(false);
         });
 
         newSocket.on('connect_error', (err) => {
@@ -74,10 +88,7 @@ const Chat = ({ projectId, userId, username }) => {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
-              // Send auth token if you have it
-              ...(localStorage.getItem('token') && {
-                'x-auth-token': localStorage.getItem('token')
-              })
+              'x-auth-token': token
             }
           });
           
@@ -132,12 +143,9 @@ const Chat = ({ projectId, userId, username }) => {
     }
 
     try {
+      // Only send message content, server will use authenticated user info
       const messageData = {
-        projectId,
-        userId,
-        username,
-        content: trimmedMessage,
-        timestamp: new Date().toISOString()
+        content: trimmedMessage
       };
 
       console.log('Sending message:', messageData);

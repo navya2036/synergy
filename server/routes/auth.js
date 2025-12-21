@@ -1,13 +1,53 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const { generateOTP, sendOTPEmail } = require('../utils/email');
 
 const router = express.Router();
 
+// Rate limiter for login attempts (5 requests per 15 minutes)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many login attempts, please try again after 15 minutes',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for registration (3 requests per hour)
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many registration attempts, please try again after an hour',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for OTP resend (3 requests per 10 minutes)
+const otpResendLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 3, // 3 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many OTP requests, please try again after 10 minutes',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Register user
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { name, email, password, college, education, skills, about, projectsDone } = req.body;
 
@@ -100,7 +140,7 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 // Login user
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -140,7 +180,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Resend OTP
-router.post('/resend-otp', async (req, res) => {
+router.post('/resend-otp', otpResendLimiter, async (req, res) => {
   try {
     const { userId } = req.body;
 

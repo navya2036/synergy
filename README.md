@@ -1,191 +1,171 @@
-# Synergy - Project Collaboration Platform
+# 🚀 Synergy — Project Collaboration Platform
 
-Synergy is a comprehensive project collaboration platform that enables teams to work together effectively by providing tools for project management, resource sharing, and team communication.
+Synergy is a full-stack project collaboration platform built with the MERN stack, designed to help teams manage projects, communicate in real time, and collaborate efficiently from a single workspace.
 
-## Features
+It supports secure authentication, role-based project access, real-time chat, task tracking, meeting scheduling, and cloud-based resource sharing.
 
-### Project Management
+## ✨ Key Features
 
-- Create and manage projects with detailed descriptions
+### 🔐 Authentication & User Management
+
+- Secure user registration and login using JWT
+- Email verification using OTP
+- User profiles with skills, education, and experience
+- Role-based access control for project resources
+
+### 📁 Project Management
+
+- Create and manage projects with descriptions, categories, and required skills
+- Define team size and manage project members
 - Track project status and progress
-- Set project timelines and milestones
-- Manage team members and roles
+- View projects created and joined by a user
 
-### Team Collaboration
+### 🤝 Team Collaboration
 
-- **Team Chat**: Real-time communication within project teams
-- **Resource Sharing**: Upload and share PDF resources with team members
-- **Task Management**: Assign and track tasks with priorities and deadlines
-- **Meeting Scheduler**: Schedule and manage team meetings
+- Real-time team chat using Socket.IO (with persistent chat history)
+- Join request system with approval/rejection workflow
+- Task management with priorities, deadlines, and status tracking
+- Meeting scheduler with email notifications and attendance tracking
 
-### Project Overview
+### 📄 Resource Sharing
 
-- Visual progress tracking
-- Team member statistics
-- Resource management
-- Deadline tracking
+- Upload and share PDF resources securely
+- Files stored in Cloudinary (cloud storage)
+- Metadata stored in MongoDB
+- Access restricted to project members
 
-### User Management
+## 🧠 Architecture Overview
 
-- Secure authentication system
-- Email verification
-- User profiles with skills and experience
-- Role-based access control
+- REST APIs for CRUD operations and data persistence
+- Socket.IO for real-time project chat
+- MongoDB as the primary database for users, projects, tasks, meetings, and messages
+- Cloudinary for scalable and persistent file storage
 
-## Technology Stack
+## 🛠️ Tech Stack
 
 ### Frontend
 
 - React.js
-- CSS for styling
-- Axios for API communication
-- Real-time updates
+- Axios
+- CSS
+- Socket.IO Client
 
 ### Backend
 
 - Node.js
 - Express.js
-- MongoDB for database
-- JWT for authentication
-- Multer for file uploads
+- MongoDB (Mongoose)
+- JWT Authentication
+- Socket.IO
+- Cloudinary (file storage)
+- Nodemailer (email notifications)
 
-## Getting Started
+## ⚙️ Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v14+)
 - MongoDB
-- npm or yarn package manager
+- npm or yarn
 
 ### Installation
 
-1. Clone the repository
+**1️⃣ Clone the repository**
 
 ```bash
 git clone https://github.com/navya2036/synergy.git
 cd synergy
 ```
 
-2. Install dependencies for the server
+**2️⃣ Install backend dependencies**
 
 ```bash
 cd server
 npm install
 ```
 
-3. Install dependencies for the client
+**3️⃣ Install frontend dependencies**
 
 ```bash
 cd ../client
 npm install
 ```
 
-4. Set up environment variables
-   Create a `.env` file in the server directory with the following variables:
+### Environment Variables
+
+Create a `.env` file inside the `server` folder:
 
 ```env
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-EMAIL_USER=your_email_for_notifications
+EMAIL_USER=your_email
 EMAIL_PASS=your_email_password
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-5. Quick Start (Run both client and server)
+### Run the Application (Development)
+
+From the root folder:
 
 ```bash
-# Install all dependencies (both client and server)
-npm run install-all
-
-# Start both client and server with a single command
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
-The server will run on `http://localhost:5000`
+- **Frontend** → `http://localhost:3000`
+- **Backend** → `http://localhost:5000/api`
 
-Alternatively, you can start the servers separately:
-
-For the backend:
-
-```bash
-cd server
-npm start
-```
-
-For the frontend:
+### Production Build
 
 ```bash
 cd client
-npm start
+npm run build
 ```
 
-## Project Structure
+The frontend build is ready for deployment.
+
+## 📂 Project Structure
 
 ```
-project/
-├── client/                 # Frontend React application
+synergy/
+├── client/                 # React frontend
 │   ├── public/
 │   └── src/
-│       ├── components/     # React components
-│       ├── contexts/       # React contexts
-│       └── utils/         # Utility functions
+│       ├── components/
+│       ├── contexts/
+│       └── utils/
 │
-├── server/                 # Backend Node.js application
-│   ├── models/            # MongoDB models
-│   ├── routes/            # API routes
-│   ├── utils/             # Utility functions
-│   └── server.js          # Main server file
+├── server/                 # Node.js backend
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # API routes
+│   ├── middleware/         # Auth middleware
+│   ├── utils/              # Email & helper utilities
+│   └── server.js
 │
-└── README.md              # Project documentation
+└── README.md
 ```
 
-## Features in Detail
-
-### Project Management
-
-- Create new projects with detailed descriptions
-- Set project categories and required skills
-- Define team size and roles
-- Track project progress and status
-
-### Team Collaboration
-
-- Real-time team chat
-- PDF resource sharing and management
-- Task creation and assignment
-- Meeting scheduling with notifications
-
-### User Management
-
-- Secure user registration with email verification
-- Profile management with skills and experience
-- Project join requests and approvals
-- Role-based access control for project resources
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Security
+## 🔐 Security Highlights
 
 - JWT-based authentication
-- Secure password hashing
-- Email verification for new accounts
+- Password hashing with bcrypt
 - Protected API endpoints
-- Secure file upload handling
+- Email verification for new users
+- Backend-enforced role and membership checks
+- Secure cloud-based file storage
+- Rate limiting on authentication routes
+- Socket.IO authentication with JWT
 
-## Future Enhancements
+## 🚧 Future Enhancements
 
-- Real-time collaborative document editing
+- Role-based permissions (Admin / Member)
 - Video conferencing integration
-- Project timeline visualization
-- Advanced analytics and reporting
+- Activity logs & analytics
+- Real-time collaborative documents
 - Mobile application support
 
-## License
+## 📜 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.

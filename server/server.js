@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // Import routes and models
@@ -15,6 +16,9 @@ const meetingRoutes = require('./routes/meetings');
 const messageRoutes = require('./routes/messages');
 const resourceRoutes = require('./routes/resources');
 const Message = require('./models/Message');
+const Project = require('./models/Project');
+const User = require('./models/User');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 // Serve uploaded files
@@ -41,7 +45,6 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/synergy', {
@@ -67,80 +70,132 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api', resourceRoutes);
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('New socket connection established');
-  
-  const { projectId, userId } = socket.handshake.query;
-  console.log('Connection params:', { projectId, userId });
-  
-  if (!projectId || !userId) {
-    console.error('Missing projectId or userId in connection');
-    socket.disconnect();
-    return;
-  }
-  
-  // Join a room specific to the project
-  socket.join(projectId);
-  console.log(`User ${userId} connected to project ${projectId}`);
-  
-  // Send confirmation of connection
-  socket.emit('connected', { 
-    message: 'Successfully connected to chat',
-    userId,
-    projectId
-  });
-
-  socket.on('message', async (messageData, callback) => {
-    try {
-      console.log('Received message from client:', messageData);
-      
-      // Create new message
-      const newMessage = new Message({
-        projectId: messageData.projectId,
-        userId: messageData.userId,
-        username: messageData.username,
-        content: messageData.content,
-        timestamp: new Date()
-      });
-      
-      // Save to database
-      const savedMessage = await newMessage.save();
-      console.log('Message saved:', savedMessage);
-      
-      // Prepare message for sending
-      const messageToSend = {
-        _id: savedMessage._id.toString(),
-        projectId: savedMessage.projectId,
-        userId: savedMessage.userId,
-        username: savedMessage.username,
-        content: savedMessage.content,
-        timestamp: savedMessage.timestamp.toISOString()
-      };
-      
-      // Broadcast to all clients in the room
-      io.to(projectId).emit('message', messageToSend);
-      console.log('Message broadcast to room:', projectId);
-      
-      // Send acknowledgment
-      if (callback) callback({ success: true, messageId: savedMessage._id });
-    } catch (error) {
-      console.error('Error handling message:', error);
-      if (callback) callback({ success: false, error: error.message });
+// Socket.IO connection handling with JWT authentication
+io.on('connection', async (socket) => {
+  try {
+    // Get token from handshake auth
+    const token = socket.handshake.auth.token;
+    
+    if (!token) {
+      socket.emit('error', { message: 'Authentication required' });
+      socket.disconnect();
+      return;
     }
-  });
 
-  // Handle errors
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
-  });
+    // Verify JWT token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    } catch (err) {
+      socket.emit('error', { message: 'Invalid or expired token' });
+      socket.disconnect();
+      return;
+    }
 
-  socket.on('disconnect', (reason) => {
-    console.log(`User ${userId} disconnected from project ${projectId}. Reason: ${reason}`);
-    socket.leave(projectId);
-    // Notify others in the room that a user disconnected
-    socket.to(projectId).emit('user_left', { userId, timestamp: new Date().toISOString() });
-  });
+    // Get user from database
+    const user = await User.findById(decoded.user.id);
+    if (!user) {
+      socket.emit('error', { message: 'User not found' });
+      socket.disconnect();
+      return;
+    }
+
+    // Get projectId from handshake query
+    const { projectId } = socket.handshake.query;
+    
+    if (!projectId) {
+      socket.emit('error', { message: 'Project ID required' });
+      socket.disconnect();
+      return;
+    }
+
+    // Verify user is a member of the project
+    const project = await Project.findById(projectId);
+    if (!project) {
+      socket.emit('error', { message: 'Project not found' });
+      socket.disconnect();
+      return;
+    }
+
+    // Check if user is member or creator
+    if (!project.members.includes(user.email) && project.creatorEmail !== user.email) {
+      socket.emit('error', { message: 'Not authorized to access this project chat' });
+      socket.disconnect();
+      return;
+    }
+
+    // Store user info in socket for later use
+    socket.userId = user._id.toString();
+    socket.userEmail = user.email;
+    socket.username = user.name;
+    socket.projectId = projectId;
+  
+    // Join a room specific to the project
+    socket.join(projectId);
+  
+    // Send confirmation of connection
+    socket.emit('connected', { 
+      message: 'Successfully connected to chat',
+      userId: socket.userId,
+      username: socket.username,
+      projectId: socket.projectId
+    });
+
+    socket.on('message', async (messageData, callback) => {
+      try {
+        // Use authenticated user info from socket (not from client)
+        const newMessage = new Message({
+          projectId: socket.projectId,
+          userId: socket.userId,
+          username: socket.username,
+          content: messageData.content,
+          timestamp: new Date()
+        });
+      
+        // Save to database
+        const savedMessage = await newMessage.save();
+      
+        // Prepare message for sending
+        const messageToSend = {
+          _id: savedMessage._id.toString(),
+          projectId: savedMessage.projectId,
+          userId: savedMessage.userId,
+          username: savedMessage.username,
+          content: savedMessage.content,
+          timestamp: savedMessage.timestamp.toISOString()
+        };
+      
+        // Broadcast to all clients in the room
+        io.to(socket.projectId).emit('message', messageToSend);
+      
+        // Send acknowledgment
+        if (callback) callback({ success: true, messageId: savedMessage._id });
+      } catch (error) {
+        console.error('Error handling message:', error);
+        if (callback) callback({ success: false, error: error.message });
+      }
+    });
+
+    // Handle errors
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      socket.leave(socket.projectId);
+      // Notify others in the room that a user disconnected
+      socket.to(socket.projectId).emit('user_left', { 
+        userId: socket.userId, 
+        username: socket.username,
+        timestamp: new Date().toISOString() 
+      });
+    });
+
+  } catch (error) {
+    console.error('Socket connection error:', error);
+    socket.emit('error', { message: 'Connection failed' });
+    socket.disconnect();
+  }
 });
 
 // Health check route
@@ -152,16 +207,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
-
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({ 
+    success: false,
+    message: 'Route not found',
+    code: 'NOT_FOUND'
+  });
 });
+
+// Centralized error handling middleware (must be last)
+app.use(errorHandler);
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

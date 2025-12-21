@@ -442,16 +442,34 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
                 </div>
 
                 <div className="overview-card">
-                  <h3>Next Deadline</h3>
+                  <h3>Upcoming Task</h3>
                   <div className="deadline">
-                    {tasks.filter(t => t.status !== 'completed').length > 0 ? (
-                      <>
-                        <span className="date">{tasks.filter(t => t.status !== 'completed')[0]?.dueDate}</span>
-                        <p>{tasks.filter(t => t.status !== 'completed')[0]?.title}</p>
-                      </>
-                    ) : (
-                      <p>No pending tasks</p>
-                    )}
+                    {(() => {
+                      const pendingTasks = tasks.filter(t => t.status !== 'completed' && t.dueDate);
+                      if (pendingTasks.length > 0) {
+                        const nextTask = pendingTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))[0];
+                        const dueDate = new Date(nextTask.dueDate);
+                        const today = new Date();
+                        const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                        
+                        return (
+                          <>
+                            <p className="task-title">{nextTask.title}</p>
+                            <span className="date">{dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <div className="days-left">
+                              {daysLeft > 0 ? (
+                                <span className="days-count">{daysLeft} {daysLeft === 1 ? 'day' : 'days'} left</span>
+                              ) : daysLeft === 0 ? (
+                                <span className="days-count today">Due Today</span>
+                              ) : (
+                                <span className="days-count overdue">{Math.abs(daysLeft)} {Math.abs(daysLeft) === 1 ? 'day' : 'days'} overdue</span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      }
+                      return <p>No pending tasks</p>;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -472,27 +490,37 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
               <div className="team-overview">
                 <h3>Team Members</h3>
-                {project.members && project.members.length > 0 ? (
-                  <div className="team-grid">
-                    {project.creator && (
-                      <div className="team-member-card lead">
-                        <h4>{project.creator}</h4>
-                        <p>Project Lead</p>
-                        <span className="lead-badge">LEAD</span>
+                <div className="team-grid">
+                  {/* Project Lead */}
+                  {project.creator && (
+                    <div className="team-member-card lead">
+                      <h4>{project.creator}</h4>
+                      <p>{project.creatorEmail}</p>
+                      <span className="lead-badge">LEAD</span>
+                    </div>
+                  )}
+                  
+                  {/* Team Members */}
+                  {project.membersDetails && project.membersDetails.length > 0 ? (
+                    project.membersDetails.map((member, index) => (
+                      <div key={index} className="team-member-card">
+                        <h4>{member.name}</h4>
+                        <p>{member.email}</p>
+                        {member.skills && member.skills.length > 0 && (
+                          <div className="member-skills">
+                            {member.skills.slice(0, 3).map((skill, idx) => (
+                              <span key={idx} className="skill-badge">{skill}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {project.members.map((member, index) => (
-                      member.email !== project.creatorEmail && (
-                        <div key={index} className="team-member-card">
-                          <h4>{member.name}</h4>
-                          <p>Team Member</p>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                ) : (
-                  <p className="empty-state">No team members yet. Be the first to join!</p>
-                )}
+                    ))
+                  ) : (
+                    <div className="empty-message">
+                      <p>No other team members yet</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -772,17 +800,17 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
                     value={taskForm.assignedTo}
                     onChange={(e) => {
                       const selectedEmail = e.target.value;
-                      const selectedMember = project?.members?.find(email => email === selectedEmail);
-                      const selectedName = selectedMember ? selectedMember : selectedEmail;
+                      const selectedMember = project?.membersDetails?.find(member => member.email === selectedEmail);
+                      const selectedName = selectedMember ? selectedMember.name : selectedEmail;
                       handleTaskFormChange('assignedTo', selectedEmail);
                       handleTaskFormChange('assignedToName', selectedName);
                     }}
                     required
                   >
                     <option value="">Select team member</option>
-                    {project?.members?.map((memberEmail, index) => (
-                      <option key={index} value={memberEmail}>
-                        {memberEmail}
+                    {project?.membersDetails?.map((member, index) => (
+                      <option key={index} value={member.email}>
+                        {member.name} ({member.email})
                       </option>
                     ))}
                   </select>
