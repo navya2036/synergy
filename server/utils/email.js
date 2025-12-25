@@ -1,19 +1,7 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
-// Email configuration with optimized settings
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'your-email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your-app-password'
-  },
-  pool: true, // Use connection pool
-  maxConnections: 5,
-  maxMessages: 100,
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,
-  socketTimeout: 20000 // 20 seconds
-});
+// Initialize SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Generate OTP
 const generateOTP = () => {
@@ -22,19 +10,9 @@ const generateOTP = () => {
 
 // Send OTP Email
 const sendOTPEmail = async (email, otp, name) => {
-  // For development: log OTP to console if email is not configured properly
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
-      process.env.EMAIL_PASS === 'your-app-password' || 
-      process.env.EMAIL_USER === 'your-email@gmail.com') {
-    console.log(`\n🔐 OTP for ${email}: ${otp}`);
-    console.log(`User: ${name}`);
-    console.log(`Copy this OTP to verify the account\n`);
-    return true; // Return success for development
-  }
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const msg = {
     to: email,
+    from: process.env.EMAIL_FROM,
     subject: 'Verify Your Email - Synergy Platform',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -52,34 +30,23 @@ const sendOTPEmail = async (email, otp, name) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
     console.log(`✅ Email sent successfully to ${email}`);
     return true;
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
-    console.log(`\n🔐 FALLBACK - OTP for ${email}: ${otp}`);
-    console.log(`User: ${name}`);
-    console.log(`Email failed, but you can use this OTP to verify the account\n`);
-    return true; // Return success even if email fails, so user can still use OTP from console
+    if (error.response) {
+      console.error('SendGrid error details:', error.response.body);
+    }
+    throw error;
   }
 };
 
 // Send Join Request Notification to Project Owner
 const sendJoinRequestEmail = async (ownerEmail, ownerName, requesterName, projectTitle, message) => {
-  // For development: log notification to console if email is not configured properly
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
-      process.env.EMAIL_PASS === 'your-app-password' || 
-      process.env.EMAIL_USER === 'your-email@gmail.com') {
-    console.log(`\n📧 Join Request Notification for ${ownerEmail}`);
-    console.log(`Project: ${projectTitle}`);
-    console.log(`From: ${requesterName}`);
-    console.log(`Message: ${message}\n`);
-    return true; // Return success for development
-  }
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const msg = {
     to: ownerEmail,
+    from: process.env.EMAIL_FROM,
     subject: `New Join Request for ${projectTitle} - Synergy Platform`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -98,31 +65,23 @@ const sendJoinRequestEmail = async (ownerEmail, ownerName, requesterName, projec
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
     console.log(`✅ Join request notification email sent successfully to ${ownerEmail}`);
     return true;
   } catch (error) {
     console.error('❌ Error sending join request notification:', error.message);
-    return false;
+    if (error.response) {
+      console.error('SendGrid error details:', error.response.body);
+    }
+    throw error;
   }
 };
 
 // Send Join Request Response Notification to Requester
 const sendRequestResponseEmail = async (requesterEmail, requesterName, projectTitle, status, ownerName) => {
-  // For development: log notification to console if email is not configured properly
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
-      process.env.EMAIL_PASS === 'your-app-password' || 
-      process.env.EMAIL_USER === 'your-email@gmail.com') {
-    console.log(`\n📧 Request Response Notification for ${requesterEmail}`);
-    console.log(`Project: ${projectTitle}`);
-    console.log(`Status: ${status}`);
-    console.log(`From: ${ownerName}\n`);
-    return true; // Return success for development
-  }
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const msg = {
     to: requesterEmail,
+    from: process.env.EMAIL_FROM,
     subject: `Join Request ${status === 'accepted' ? 'Accepted' : 'Update'} for ${projectTitle} - Synergy Platform`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -141,12 +100,124 @@ const sendRequestResponseEmail = async (requesterEmail, requesterName, projectTi
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
     console.log(`✅ Request response email sent successfully to ${requesterEmail}`);
     return true;
   } catch (error) {
     console.error('❌ Error sending request response email:', error.message);
-    return false;
+    if (error.response) {
+      console.error('SendGrid error details:', error.response.body);
+    }
+    throw error;
+  }
+};
+
+// Send Task Assignment Email
+const sendTaskAssignmentEmail = async (assigneeEmail, assigneeName, taskTitle, taskDescription, projectTitle, assignedByName, dueDate) => {
+  const msg = {
+    to: assigneeEmail,
+    from: process.env.EMAIL_FROM,
+    subject: `New Task Assigned: "${taskTitle}" - ${projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">New Task Assigned!</h2>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p>Hi <strong>${assigneeName}</strong>,</p>
+          <p>You have been assigned a new task in the project <strong>"${projectTitle}"</strong>.</p>
+          
+          <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <h3 style="color: #667eea; margin-top: 0;">📋 Task Details:</h3>
+            <p><strong>Task:</strong> ${taskTitle}</p>
+            <p><strong>Description:</strong> ${taskDescription}</p>
+            <p><strong>Assigned by:</strong> ${assignedByName}</p>
+            ${dueDate ? `<p><strong>Due date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ''}
+          </div>
+          
+          <p>Please log in to your project dashboard to view the full task details and update your progress.</p>
+          
+          <div style="margin: 25px 0; padding: 15px; background: #e3f2fd; border-radius: 5px;">
+            <p style="margin: 0; color: #1976d2;">
+              💡 <strong>Tip:</strong> Keep your team updated on your progress by updating the task status regularly.
+            </p>
+          </div>
+          
+          <p>Good luck with your task!</p>
+          <p>Best regards,<br>The Synergy Platform Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`✅ Task assignment notification sent to ${assigneeEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending task assignment email:', error.message);
+    if (error.response) {
+      console.error('SendGrid error details:', error.response.body);
+    }
+    throw error;
+  }
+};
+
+// Send Meeting Invitation Email
+const sendMeetingInvitationEmail = async (attendeeEmail, attendeeName, meetingTitle, meetingDescription, projectTitle, scheduledByName, meetingDate, meetingTime, meetingLink, agenda) => {
+  const meetingDateTime = new Date(meetingDate);
+  const formattedDate = meetingDateTime.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const msg = {
+    to: attendeeEmail,
+    from: process.env.EMAIL_FROM,
+    subject: `Meeting Invitation: "${meetingTitle}" - ${projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">📅 You're Invited to a Team Meeting!</h2>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p>Hi <strong>${attendeeName}</strong>,</p>
+          <p>You have been invited to a team meeting for the project <strong>"${projectTitle}"</strong>.</p>
+          
+          <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <h3 style="color: #667eea; margin-top: 0;">📋 Meeting Details:</h3>
+            <p><strong>Meeting:</strong> ${meetingTitle}</p>
+            ${meetingDescription ? `<p><strong>Description:</strong> ${meetingDescription}</p>` : ''}
+            <p><strong>Scheduled by:</strong> ${scheduledByName}</p>
+            <p><strong>Date:</strong> ${formattedDate}</p>
+            <p><strong>Time:</strong> ${meetingTime}</p>
+            ${meetingLink ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}" style="color: #667eea;">${meetingLink}</a></p>` : ''}
+            ${agenda ? `<p><strong>Agenda:</strong> ${agenda}</p>` : ''}
+          </div>
+          
+          <p>Please mark your calendar and join the meeting on time. You can find more details in your project dashboard.</p>
+          
+          <div style="margin: 25px 0; padding: 15px; background: #e3f2fd; border-radius: 5px;">
+            <p style="margin: 0; color: #1976d2;">
+              💡 <strong>Tip:</strong> Make sure to prepare any materials or updates you need to share during the meeting.
+            </p>
+          </div>
+          
+          <p>Looking forward to seeing you there!</p>
+          <p>Best regards,<br>The Synergy Platform Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`✅ Meeting invitation sent to ${attendeeEmail}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending meeting invitation email:', error.message);
+    if (error.response) {
+      console.error('SendGrid error details:', error.response.body);
+    }
+    throw error;
   }
 };
 
@@ -154,5 +225,7 @@ module.exports = {
   generateOTP,
   sendOTPEmail,
   sendJoinRequestEmail,
-  sendRequestResponseEmail
+  sendRequestResponseEmail,
+  sendTaskAssignmentEmail,
+  sendMeetingInvitationEmail
 };

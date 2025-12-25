@@ -1,93 +1,10 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const Meeting = require('../models/Meeting');
 const Project = require('../models/Project');
 const User = require('../models/User');
+const { sendMeetingInvitationEmail } = require('../utils/email');
 
 const router = express.Router();
-
-// Email configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// Send Meeting Invitation Email
-const sendMeetingInvitationEmail = async (attendeeEmail, attendeeName, meetingTitle, meetingDescription, projectTitle, scheduledByName, meetingDate, meetingTime, meetingLink, agenda) => {
-  // For development: log notification to console if email is not configured properly
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
-      process.env.EMAIL_PASS === 'your-app-password' || 
-      process.env.EMAIL_USER === 'your-email@gmail.com') {
-    console.log(`\n📅 MEETING INVITATION NOTIFICATION:`);
-    console.log(`To: ${attendeeEmail} (${attendeeName})`);
-    console.log(`Project: ${projectTitle}`);
-    console.log(`Meeting: ${meetingTitle}`);
-    console.log(`Description: ${meetingDescription}`);
-    console.log(`Scheduled by: ${scheduledByName}`);
-    console.log(`Date & Time: ${new Date(meetingDate).toLocaleDateString()} at ${meetingTime}`);
-    console.log(`Meeting Link: ${meetingLink || 'No link provided'}`);
-    console.log(`Agenda: ${agenda || 'No agenda provided'}`);
-    console.log(`\n📋 Please check your project dashboard to view meeting details.`);
-    return;
-  }
-
-  try {
-    const meetingDateTime = new Date(meetingDate);
-    const formattedDate = meetingDateTime.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: attendeeEmail,
-      subject: `Meeting Invitation: "${meetingTitle}" - ${projectTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">📅 You're Invited to a Team Meeting!</h2>
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p>Hi <strong>${attendeeName}</strong>,</p>
-            <p>You have been invited to a team meeting for the project <strong>"${projectTitle}"</strong>.</p>
-            
-            <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
-              <h3 style="color: #667eea; margin-top: 0;">📋 Meeting Details:</h3>
-              <p><strong>Meeting:</strong> ${meetingTitle}</p>
-              ${meetingDescription ? `<p><strong>Description:</strong> ${meetingDescription}</p>` : ''}
-              <p><strong>Scheduled by:</strong> ${scheduledByName}</p>
-              <p><strong>Date:</strong> ${formattedDate}</p>
-              <p><strong>Time:</strong> ${meetingTime}</p>
-              ${meetingLink ? `<p><strong>Meeting Link:</strong> <a href="${meetingLink}" style="color: #667eea;">${meetingLink}</a></p>` : ''}
-              ${agenda ? `<p><strong>Agenda:</strong> ${agenda}</p>` : ''}
-            </div>
-            
-            <p>Please mark your calendar and join the meeting on time. You can find more details in your project dashboard.</p>
-            
-            <div style="margin: 25px 0; padding: 15px; background: #e3f2fd; border-radius: 5px;">
-              <p style="margin: 0; color: #1976d2;">
-                💡 <strong>Tip:</strong> Make sure to prepare any materials or updates you need to share during the meeting.
-              </p>
-            </div>
-            
-            <p>Looking forward to seeing you there!</p>
-            <p>Best regards,<br>The Synergy Platform Team</p>
-          </div>
-        </div>
-      `
-    });
-    console.log(`✅ Meeting invitation sent to ${attendeeEmail}`);
-  } catch (error) {
-    console.error('❌ Error sending meeting invitation email:', error.message);
-    console.log(`\n📧 FALLBACK - Meeting invitation for ${attendeeEmail}:`);
-    console.log(`Meeting "${meetingTitle}" in project "${projectTitle}" scheduled by ${scheduledByName}`);
-    console.log(`Date: ${new Date(meetingDate).toLocaleDateString()} at ${meetingTime}`);
-    console.log(`Link: ${meetingLink || 'No link provided'}`);
-  }
-};
 
 // Schedule a new meeting (only project leads can schedule meetings)
 router.post('/', async (req, res) => {

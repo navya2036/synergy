@@ -1,81 +1,11 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const Task = require('../models/Task');
 const Project = require('../models/Project');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendTaskAssignmentEmail } = require('../utils/email');
 
 const router = express.Router();
-
-// Email configuration (same as before)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// Send Task Assignment Email
-const sendTaskAssignmentEmail = async (assigneeEmail, assigneeName, taskTitle, taskDescription, projectTitle, assignedByName, dueDate) => {
-  // For development: log notification to console if email is not configured properly
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
-      process.env.EMAIL_PASS === 'your-app-password' || 
-      process.env.EMAIL_USER === 'your-email@gmail.com') {
-    console.log(`\n📧 TASK ASSIGNMENT NOTIFICATION:`);
-    console.log(`To: ${assigneeEmail} (${assigneeName})`);
-    console.log(`Project: ${projectTitle}`);
-    console.log(`Task: ${taskTitle}`);
-    console.log(`Description: ${taskDescription}`);
-    console.log(`Assigned by: ${assignedByName}`);
-    console.log(`Due date: ${dueDate ? new Date(dueDate).toLocaleDateString() : 'No due date set'}`);
-    console.log(`\n📋 Please check your project dashboard to view and manage this task.`);
-    return;
-  }
-
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: assigneeEmail,
-      subject: `New Task Assigned: "${taskTitle}" - ${projectTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">New Task Assigned!</h2>
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p>Hi <strong>${assigneeName}</strong>,</p>
-            <p>You have been assigned a new task in the project <strong>"${projectTitle}"</strong>.</p>
-            
-            <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
-              <h3 style="color: #667eea; margin-top: 0;">📋 Task Details:</h3>
-              <p><strong>Task:</strong> ${taskTitle}</p>
-              <p><strong>Description:</strong> ${taskDescription}</p>
-              <p><strong>Assigned by:</strong> ${assignedByName}</p>
-              ${dueDate ? `<p><strong>Due date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ''}
-            </div>
-            
-            <p>Please log in to your project dashboard to view the full task details and update your progress.</p>
-            
-            <div style="margin: 25px 0; padding: 15px; background: #e3f2fd; border-radius: 5px;">
-              <p style="margin: 0; color: #1976d2;">
-                💡 <strong>Tip:</strong> Keep your team updated on your progress by updating the task status regularly.
-              </p>
-            </div>
-            
-            <p>Good luck with your task!</p>
-            <p>Best regards,<br>The Synergy Platform Team</p>
-          </div>
-        </div>
-      `
-    });
-    console.log(`✅ Task assignment notification sent to ${assigneeEmail}`);
-  } catch (error) {
-    console.error('❌ Error sending task assignment email:', error.message);
-    console.log(`\n📧 FALLBACK - Task assignment notification for ${assigneeEmail}:`);
-    console.log(`Task "${taskTitle}" in project "${projectTitle}" assigned by ${assignedByName}`);
-    console.log(`Description: ${taskDescription}`);
-    console.log(`Due: ${dueDate ? new Date(dueDate).toLocaleDateString() : 'No due date'}`);
-  }
-};
 
 // Create a new task (only project leads can create tasks)
 router.post('/', auth, async (req, res) => {
