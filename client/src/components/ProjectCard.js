@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import './ProjectCard.css';
 
 const ProjectCard = ({ project, user, onLoginRequired }) => {
@@ -55,17 +56,11 @@ const ProjectCard = ({ project, user, onLoginRequired }) => {
         message: message.trim()
       });
       
-      const response = await fetch(`/api/joinRequests/request/${project._id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requesterId: user.id || user._id,
-          requesterName: user.name,
-          requesterEmail: user.email,
-          message: message.trim()
-        })
+      const response = await api.post(`/api/joinRequests/request/${project._id}`, {
+        requesterId: user.id || user._id,
+        requesterName: user.name,
+        requesterEmail: user.email,
+        message: message.trim()
       });
       
       console.log('Response status:', response.status);

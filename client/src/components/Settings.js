@@ -49,7 +49,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
 
   const loadUserSettings = async () => {
     try {
-      const response = await axios.get('/api/users/settings', {
+      const response = await api.get('/api/users/settings', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -88,7 +88,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/auth/change-password', {
+      const response = await api.post('/api/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
         email: user.email
@@ -113,7 +113,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
     setPrivacySettings(updatedSettings);
 
     try {
-      await axios.put('/api/users/settings/privacy', updatedSettings, {
+      await api.put('/api/users/settings/privacy', updatedSettings, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -129,7 +129,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
     setAccountSettings(updatedSettings);
 
     try {
-      await axios.put('/api/users/settings/account', updatedSettings, {
+      await api.put('/api/users/settings/account', updatedSettings, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -146,7 +146,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
         const confirmation = prompt('Please type DELETE to confirm account deletion:');
         if (confirmation === 'DELETE') {
           try {
-            await axios.delete('/api/users/account', {
+            await api.delete('/api/users/account', {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`
               }
@@ -167,7 +167,7 @@ const Settings = ({ user, onLogin, onLogout }) => {
   const handleDataDownload = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/download-data', {
+      const response = await api.get('/api/users/download-data', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },

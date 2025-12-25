@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../utils/api';
 import './CreateProjectModal.css';
 
 const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, user }) => {
@@ -49,16 +50,10 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, user }) => {
         createdAt: new Date()
       };
 
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData)
-      });
+      const response = await api.post('/api/projects', projectData);
 
-      if (response.ok) {
-        const newProject = await response.json();
+      if (response.data) {
+        const newProject = response.data;
         onProjectCreated(newProject);
         onClose();
         // Reset form

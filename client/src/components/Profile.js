@@ -69,7 +69,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/users/${user.email}/stats`, {
+      const response = await api.get(`/api/users/${user.email}/stats`, {
         headers: { 'x-auth-token': token }
       });
       setUserStats(response.data);
@@ -86,7 +86,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/projects/user/${user.email}`, {
+      const response = await api.get(`/api/projects/user/${user.email}`, {
         headers: { 'x-auth-token': token }
       });
       setUserProjects(response.data);
@@ -102,7 +102,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
     if (!userEmail) return;
     
     try {
-      const response = await axios.get(`/api/users/profile/${userEmail}`);
+      const response = await api.get(`/api/users/profile/${userEmail}`);
       if (response.data) {
         const userData = response.data;
         setViewedUser(userData);
@@ -129,7 +129,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
 
   const fetchOtherUserStats = async (email) => {
     try {
-      const response = await axios.get(`/api/users/${email}/stats`);
+      const response = await api.get(`/api/users/${email}/stats`);
       if (response.data) {
         setUserStats(response.data);
       }
@@ -140,7 +140,7 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
 
   const fetchOtherUserProjects = async (email) => {
     try {
-      const response = await axios.get(`/api/projects/user/${email}`);
+      const response = await api.get(`/api/projects/user/${email}`);
       if (response.data) {
         setUserProjects(response.data);
       }
@@ -177,17 +177,15 @@ const Profile = ({ user, onLogin, onLogout, viewMode = false }) => {
   const handleSaveProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/users/profile', {
-        method: 'PUT',
+      const response = await api.put('/api/users/profile', formData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
+        }
       });
 
-      if (response.ok) {
-        const updatedUser = await response.json();
+      if (response.data) {
+        const updatedUser = response.data;
         localStorage.setItem('user', JSON.stringify(updatedUser));
         onLogin(updatedUser);
         setIsEditing(false);

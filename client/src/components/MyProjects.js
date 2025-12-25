@@ -27,7 +27,7 @@ const MyProjects = ({ user, onLogin, onLogout }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/projects/user/${user.email}`, {
+      const response = await api.get(`/api/projects/user/${user.email}`, {
         headers: {
           'x-auth-token': token
         }

@@ -56,7 +56,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
   const fetchProject = async () => {
     try {
-      const response = await axios.get(`/api/projects/${id}`);
+      const response = await api.get(`/api/projects/${id}`);
       setProject(response.data);
       setLoading(false);
     } catch (error) {
@@ -70,7 +70,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     
     setRequestsLoading(true);
     try {
-      const response = await axios.get(`/api/joinRequests/project/${id}`);
+      const response = await api.get(`/api/joinRequests/project/${id}`);
       setJoinRequests(response.data);
     } catch (error) {
       console.error('Error fetching join requests:', error);
@@ -81,7 +81,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
   const handleApproveRequest = async (requestId, requesterEmail, requesterName) => {
     try {
-      const response = await axios.put(`/api/joinRequests/respond/${requestId}`, {
+      const response = await api.put(`/api/joinRequests/respond/${requestId}`, {
         status: 'accepted',
         ownerEmail: user.email
       });
@@ -99,7 +99,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
   const handleRejectRequest = async (requestId) => {
     try {
-      const response = await axios.put(`/api/joinRequests/respond/${requestId}`, {
+      const response = await api.put(`/api/joinRequests/respond/${requestId}`, {
         status: 'rejected',
         ownerEmail: user.email
       });
@@ -121,7 +121,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     }
 
     try {
-      const response = await axios.post(`/api/joinRequests/request/${id}`, {
+      const response = await api.post(`/api/joinRequests/request/${id}`, {
         requesterId: user.id || user._id,
         requesterName: user.name,
         requesterEmail: user.email,
@@ -171,7 +171,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     if (!user || !project) return;
     
     try {
-      const response = await axios.get(`/api/tasks/project/${id}?userEmail=${user.email}`);
+      const response = await api.get(`/api/tasks/project/${id}?userEmail=${user.email}`);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -183,7 +183,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     if (!user || !project) return;
     
     try {
-      const response = await axios.get(`/api/meetings/project/${id}?userEmail=${user.email}`);
+      const response = await api.get(`/api/meetings/project/${id}?userEmail=${user.email}`);
       setMeetings(response.data);
     } catch (error) {
       console.error('Error fetching meetings:', error);
@@ -198,7 +198,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     e.preventDefault();
     if (taskForm.title.trim() && taskForm.assignedTo) {
       try {
-        const response = await axios.post('/api/tasks', {
+        const response = await api.post('/api/tasks', {
           projectId: id,
           title: taskForm.title,
           description: taskForm.description,
@@ -238,7 +238,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
   const updateTaskStatus = async (taskId, newStatus) => {
     try {
-      const response = await axios.put(`/api/tasks/${taskId}/status`, {
+      const response = await api.put(`/api/tasks/${taskId}/status`, {
         status: newStatus,
         userEmail: user.email
       });
@@ -279,7 +279,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
     }
     
     try {
-      const response = await axios.post('/api/meetings', {
+      const response = await api.post('/api/meetings', {
         projectId: id,
         title: meetingForm.title,
         scheduledBy: user.email,
@@ -318,7 +318,7 @@ const ProjectDetails = ({ user, onLogin, onLogout }) => {
 
   const handleDeleteProject = async () => {
     try {
-      await axios.delete(`/api/projects/${id}`, {
+      await api.delete(`/api/projects/${id}`, {
         headers: {
           'x-auth-token': localStorage.getItem('token')
         }

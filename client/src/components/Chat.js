@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import api from '../utils/api';
 import './Chat.css';
 
 const Chat = ({ projectId, userId, username }) => {
@@ -84,7 +85,7 @@ const Chat = ({ projectId, userId, username }) => {
         // Load existing messages
         try {
           console.log('Fetching messages for project:', projectId);
-          const response = await fetch(`/api/messages/projects/${projectId}/messages`, {
+          const response = await api.get(`/api/messages/projects/${projectId}/messages`, {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
@@ -92,12 +93,7 @@ const Chat = ({ projectId, userId, username }) => {
             }
           });
           
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to fetch messages');
-          }
-          
-          const data = await response.json();
+          const data = response.data;
           console.log('Loaded existing messages:', data);
           setMessages(Array.isArray(data) ? data : []);
           setError(null); // Clear any existing error
@@ -180,7 +176,7 @@ const Chat = ({ projectId, userId, username }) => {
             <button onClick={async () => {
               setError(null);
               try {
-                const response = await fetch(`/api/messages/projects/${projectId}/messages`, {
+                const response = await api.get(`/api/messages/projects/${projectId}/messages`, {
                   headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
@@ -189,8 +185,7 @@ const Chat = ({ projectId, userId, username }) => {
                     })
                   }
                 });
-                if (!response.ok) throw new Error('Failed to fetch messages');
-                const data = await response.json();
+                const data = response.data;
                 setMessages(Array.isArray(data) ? data : []);
               } catch (err) {
                 setError('Failed to load messages. Please try again.');
