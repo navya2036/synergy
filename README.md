@@ -1,15 +1,20 @@
 # 🚀 Synergy — Project Collaboration Platform
 
-Synergy is a full-stack project collaboration platform built with the MERN stack, designed to help teams manage projects, communicate in real time, and collaborate efficiently from a single workspace.
+Synergy is a full-stack project collaboration platform built using the MERN stack. It enables teams to manage projects, collaborate in real time, and share resources efficiently from a single workspace.
 
-It supports secure authentication, role-based project access, real-time chat, task tracking, meeting scheduling, and cloud-based resource sharing.
+The platform supports secure authentication, role-based project access, real-time communication, task tracking, meeting scheduling, and cloud-based file sharing.
+
+## 🌐 Live Demo
+
+**Frontend:** https://synergy-sigma.vercel.app  
+**Backend API:** https://synergy-ut87.onrender.com/api
 
 ## ✨ Key Features
 
 ### 🔐 Authentication & User Management
 
 - Secure user registration and login using JWT
-- Email verification using OTP
+- Email verification using OTP (SendGrid)
 - User profiles with skills, education, and experience
 - Role-based access control for project resources
 
@@ -17,12 +22,12 @@ It supports secure authentication, role-based project access, real-time chat, ta
 
 - Create and manage projects with descriptions, categories, and required skills
 - Define team size and manage project members
-- Track project status and progress
+- Track project status (Active / Completed)
 - View projects created and joined by a user
 
 ### 🤝 Team Collaboration
 
-- Real-time team chat using Socket.IO (with persistent chat history)
+- Real-time team chat using Socket.IO with persistent chat history
 - Join request system with approval/rejection workflow
 - Task management with priorities, deadlines, and status tracking
 - Meeting scheduler with email notifications and attendance tracking
@@ -31,15 +36,16 @@ It supports secure authentication, role-based project access, real-time chat, ta
 
 - Upload and share PDF resources securely
 - Files stored in Cloudinary (cloud storage)
-- Metadata stored in MongoDB
-- Access restricted to project members
+- File metadata stored in MongoDB
+- Access restricted to project members only
 
 ## 🧠 Architecture Overview
 
 - REST APIs for CRUD operations and data persistence
 - Socket.IO for real-time project chat
-- MongoDB as the primary database for users, projects, tasks, meetings, and messages
+- MongoDB Atlas as the primary database for users, projects, tasks, meetings, and messages
 - Cloudinary for scalable and persistent file storage
+- SendGrid for transactional email delivery (OTP & notifications)
 
 ## 🛠️ Tech Stack
 
@@ -48,7 +54,7 @@ It supports secure authentication, role-based project access, real-time chat, ta
 - React.js
 - Axios
 - CSS
-- Socket.IO Client
+- Deployed on **Vercel**
 
 ### Backend
 
@@ -57,10 +63,29 @@ It supports secure authentication, role-based project access, real-time chat, ta
 - MongoDB (Mongoose)
 - JWT Authentication
 - Socket.IO
-- Cloudinary (file storage)
-- Nodemailer (email notifications)
+- SendGrid (Email Service)
+- Cloudinary (File Storage)
+- DeplEnvironment Variables
 
-## ⚙️ Getting Started
+### Backend (`server/.env`)
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+SENDGRID_API_KEY=your_sendgrid_api_key
+EMAIL_FROM=verified_sender_email
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+### Frontend (`client/.env`)
+
+```env
+REACT_APP_API_URL=https://synergy-ut87.onrender.com
+```
+
+## ▶️ Getting Started (Local Setup)
 
 ### Prerequisites
 
@@ -70,81 +95,32 @@ It supports secure authentication, role-based project access, real-time chat, ta
 
 ### Installation
 
-**1️⃣ Clone the repository**
-
 ```bash
 git clone https://github.com/navya2036/synergy.git
 cd synergy
 ```
 
-**2️⃣ Install backend dependencies**
+### Backend
 
 ```bash
 cd server
 npm install
-```
-
-**3️⃣ Install frontend dependencies**
-
-```bash
-cd ../client
-npm install
-```
-
-### Environment Variables
-
-Create a `.env` file inside the `server` folder:
-
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
-
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
-
-### Run the Application (Development)
-
-From the root folder:
-
-```bash
 npm run dev
 ```
 
-- **Frontend** → `http://localhost:3000`
-- **Backend** → `http://localhost:5000/api`
-
-### Production Build
+### Frontend
 
 ```bash
 cd client
-npm run build
+npm install
+npm start
 ```
 
-The frontend build is ready for deployment.
+- **Frontend** runs on `http://localhost:3000`
+- **Backend** runs on `http://localhost:5000/api └── server.js
+  │
+  └── README.md
 
-## 📂 Project Structure
-
-```
-synergy/
-├── client/                 # React frontend
-│   ├── public/
-│   └── src/
-│       ├── components/
-│       ├── contexts/
-│       └── utils/
-│
-├── server/                 # Node.js backend
-│   ├── models/             # Mongoose schemas
-│   ├── routes/             # API routes
-│   ├── middleware/         # Auth middleware
-│   ├── utils/              # Email & helper utilities
-│   └── server.js
-│
-└── README.md
 ```
 
 ## 🔐 Security Highlights
@@ -169,3 +145,21 @@ synergy/
 ## 📜 License
 
 This project is licensed under the MIT License.
+using bcrypt
+- Protected API endpoints
+- Email verification for new users
+- Backend-enforced role and membership checks
+- Secure cloud-based file storage
+- Rate limiting on authentication routes
+- Socket.IO authentication using JWT
+
+## ⚠️ Email Deliverability Note
+
+OTP and notification emails may initially appear in the spam folder due to domain reputation. Marking emails as **Not Spam** improves deliverability.
+
+## 🚧 Future Enhancements
+
+- Advanced role-based permissions (Admin / Member)
+- Video conferencing integration
+- Activity logs & analytics dashboard
+```
