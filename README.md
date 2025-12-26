@@ -79,9 +79,9 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### Frontend (`client/.env`)
+### Frontend
 
-```env
+```
 REACT_APP_API_URL=https://synergy-ut87.onrender.com
 ```
 
@@ -134,6 +134,10 @@ npm start
 - Rate limiting on authentication routes
 - Socket.IO authentication with JWT
 
+## ⚠️ Email Deliverability Note
+
+OTP and notification emails may initially appear in the spam folder due to domain reputation. Marking emails as **Not Spam** improves deliverability.
+
 ## 🚧 Future Enhancements
 
 - Role-based permissions (Admin / Member)
@@ -145,21 +149,4 @@ npm start
 ## 📜 License
 
 This project is licensed under the MIT License.
-using bcrypt
-- Protected API endpoints
-- Email verification for new users
-- Backend-enforced role and membership checks
-- Secure cloud-based file storage
-- Rate limiting on authentication routes
-- Socket.IO authentication using JWT
-
-## ⚠️ Email Deliverability Note
-
-OTP and notification emails may initially appear in the spam folder due to domain reputation. Marking emails as **Not Spam** improves deliverability.
-
-## 🚧 Future Enhancements
-
-- Advanced role-based permissions (Admin / Member)
-- Video conferencing integration
-- Activity logs & analytics dashboard
 ```
