@@ -48,14 +48,6 @@ const ProjectCard = ({ project, user, onLoginRequired }) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Making request to:', `/api/joinRequests/request/${project._id}`);
-      console.log('Request body:', {
-        requesterId: user.id || user._id,
-        requesterName: user.name,
-        requesterEmail: user.email,
-        message: message.trim()
-      });
-      
       const response = await api.post(`/api/joinRequests/request/${project._id}`, {
         requesterId: user.id || user._id,
         requesterName: user.name,
@@ -63,24 +55,16 @@ const ProjectCard = ({ project, user, onLoginRequired }) => {
         message: message.trim()
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Success response:', data);
-        alert('Join request sent successfully! The project owner will review your request.');
-        setRequestStatus('sent');
-        setShowMessageModal(false);
-        setMessage('');
-      } else {
-        const errorData = await response.json();
-        console.log('Error response:', errorData);
-        alert(errorData.message || 'Failed to send join request');
-      }
+      // Axios returns data in response.data
+      alert('Join request sent successfully! The project owner will review your request.');
+      setRequestStatus('sent');
+      setShowMessageModal(false);
+      setMessage('');
     } catch (error) {
-      console.error('Fetch error:', error);
-      alert('Network error. Please try again.');
+      console.error('Error sending join request:', error);
+      // Axios errors have error.response.data for server errors
+      const errorMessage = error.response?.data?.message || 'Failed to send join request';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -167,8 +151,8 @@ const ProjectCard = ({ project, user, onLoginRequired }) => {
 
       {/* Message Modal */}
       {showMessageModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setShowMessageModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Join Request for "{project.title}"</h3>
               <button className="close-btn" onClick={() => setShowMessageModal(false)}>×</button>
